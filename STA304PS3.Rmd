@@ -1,0 +1,248 @@
+---
+title: "Factors that affect Canadian's attitude towards life"
+author: "Shuyu Duan,Fanxi Zhou, Feixue Han, Zhiang Chen"
+date: '2020-10-18'
+output:
+  bookdown::pdf_document2: default
+bibliography: references.bib
+---
+
+
+
+# Abstract
+We investigated the factors that significantly impact Canadian citizens' feelings of life, and then we explored the data set collected by the 2017 General Social Survey (GSS). We found that age, the total number of children, sex, marital status, health condition and family income are the factors that significantly affect people's feelings of life. These results are important because our findings indicated what factors have affected people's feelings of life and understood Canadians' attitudes towards life.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(visdat)
+library(kableExtra)
+library(dplyr)
+library(knitr)
+```
+
+# Introduction
+The World Happiness Report did a survey about the world's happiness scores and the survey has been undertaken in more than 160 countries. The results show that Canada's life satisfaction score has ranked in the top 20 in 160 countries (Ortiz-Ospina 2013). There are a variety of interior or exterior factors that affect Canadian citizens' life satisfaction rates. In this study, we want to explore what factors significantly impact Canadian citizens' feelings of life.
+
+We analyze Canadian’s feelings of life through several factors by using binary logistic regression models. The goal was to familiarize users with the content of the survey, and to describe procedures and concepts related to data quality, estimation, collection, processing and methodology through the provided context and background information. The guide was provided by the Public Use Microdata File (PUMF) of the 2017 General Social Survey (GSS) on the Family.
+
+In our study, we found that the total number of children, sex, marital status, health condition and family income significantly effect people's feelings of life. As a Canadian, people feel satisfied with less children in their life. Male have lower satisfaction towards life. Furthermore, people who live in common-law or married
+have a better life than the people who separated and widowed. Also, Canadian with good health conditions were more likely to have a satisfied life. People with the annual income of $\$125,000$ and more have a more satisfied life than the people with less than $\$100,000$ annual income. 
+```{r dataset}
+gss_data_original <- read.csv("gss.csv")
+
+#Select Data
+gss_data <- dplyr::select(gss_data_original, feelings_life, age, total_children, sex, place_birth_canada, pop_center, marital_status, vis_minority, education, own_rent, self_rated_health, income_family,province)
+```
+
+
+# Data
+The GSS dataset is based on the General Social Survey (GSS), which aimed to gather information about the changes in living conditions of Canadians and to provide information on specific policy issues. The original data contains 20602 observations and 81 variables. In this dataset, the target population includes the person who is 15 years old and older,living in 10 provinces in Canada. we tried to analysis the distribution of age, sex, education and so on. The frame of the survey was to combine the  telephone numbers (landline and cellular) with Statistics Canada’s Address Register. During the survey, 91.8% of the telephone numbers reached the household. The overall response rate of the survey is 52.4% [@citedata].
+
+We selected a group of data which is a subset of the 2017 General Social Survey (GSS) which contains 19949 observations and 13 variables . The purpose of our study is to investigate the factors that affect people's attitude towards life. From the original dataset, we conducted that people’s feeling towards life may be related to factors such as age, education, income and so on. Based on these conjectures, we built our dataset.
+
+```{r fig1, fig.cap="fuck"}
+#Check NA
+plt1 <- visdat::vis_dat(gss_data)
+plt1
+```
+In the figure above, the factors such as sex, birthplace, age, education and so on are described as character, while feeling of life, number of children and age are described as integer and numeric correspondingly. 
+
+```{r dataclean}
+#Clean Data
+gss_data <- na.omit(gss_data)
+
+#Rename variables
+gss_data$pop_center[gss_data$pop_center == 'Rural areas and small population centres (non CMA/CA)'] <- 'Rural areas'
+gss_data$pop_center[gss_data$pop_center == 'Larger urban population centres (CMA/CA)'] <- 'Urban areas'
+
+gss_data$education[gss_data$education == 'High school diploma or a high school equivalency certificate'] <- 'High school'
+gss_data$education[gss_data$education == 'Trade certificate or diploma'] <- 'Trade diploma'
+gss_data$education[gss_data$education == "Bachelor's degree (e.g. B.A., B.Sc., LL.B.)"] <- 'Bachelor degree'
+gss_data$education[gss_data$education == 'College, CEGEP or other non-university certificate or di...'] <- 'College'
+gss_data$education[gss_data$education == 'Less than high school diploma or its equivalent'] <- 'Less than high school'
+gss_data$education[gss_data$education == "University certificate or diploma below the bachelor's level"] <- 'University'
+gss_data$education[gss_data$education == "University certificate, diploma or degree above the bach..."] <- 'Above University'
+
+gss_data$own_rent[gss_data$own_rent == 'Owned by you or a member of this household, even if it i...'] <- 'Owned'
+gss_data$own_rent[gss_data$own_rent == 'Rented, even if no cash rent is paid'] <- 'Rented'
+```
+# model
+Binary logistic regression is used to predict a categorical variable based on a set of independent variables. For example, when we predict variables with yes or no or estimate the probability of “success”. In our analysis, the response variable only has value 0 and value 1, so we decide to use this model for analyzing. The formula for binary logistic regression is:
+$$\pi_i=Pr(Y_i=1|X_i=x_i)=\frac{exp(\beta_0+\beta_1x_i)}{1+exp(\beta_0+\beta_1x_i)}$$ 
+or 
+
+$$logit(\pi_i) = log(\frac{\pi_i}{1-\pi_i}) = \beta_0 + \beta_1x_i = \beta_0 + \beta_1 x_{i1} +...+\beta_q x_{iq}$$
+
+We assume that Y_i is a binary response variable for i = 1,...n and takes on value 0 or 1 with P(Y_i = 1) = pi_i. Suppose X is a set of explanatory variables, x_i is the observed value of the explanatory variables for observation i = 1,...q. From the above formula, we can also get: $$\frac{\pi}{1-\pi}=e^{\beta_0}e^{\beta_1x_1}...e^{\beta_q x_q} $$
+Then the $\beta_0$ is the baseline odds and $\beta_1$ can be interpreted as holding predictors constant, a one-unit increase in $x_1$ increases the odds of success by a factor of $e^{\beta_1}$.
+
+
+
+
+
+
+# Results
+```{r fig2}
+
+# Barplot
+plt <- gss_data %>% ggplot()+ geom_bar(aes(feelings_life, fill = ..count..),  width = 0.5) + labs(title="distribution of feelings_life", caption="Source: GSS dataset") + theme_classic()+scale_fill_gradient(low="blue", high="red")+geom_text(stat='count', aes(feelings_life,label=..count..), size=2.5, vjust=-0.4,col="tomato")
+plt
+```
+In the bar plot of distribution of feelings of life, people are mainly distributed in the 7.5-10 points range. There is a small number of people distributed under 5. 
+
+```{r fig3}
+#Histogram
+#age
+plt2 <- gss_data %>% ggplot()+ geom_histogram(aes(age, fill = ..count..), bins = 30) + labs(title="Attitude towards Life for different age", subtitle="distribution of feelings_life", caption="Source: GSS dataset") + theme_classic()+scale_fill_gradient(low="orange", high="red")
+plt2
+```
+In the historic diagram of distribution of age, the amount of people are mainly distributed in the 35-45 and 55-65 age range. Furthermore, people over 80 years old had the largest amount. 
+
+```{r fig4}
+#Box plot
+#sex
+plt3 <- gss_data %>% ggplot(aes(y=feelings_life , x= sex)) + geom_boxplot(col="royalblue",fill = "pink",outlier.colour = "blue", outlier.shape = 16)+ labs(title="Attitude towards Life for different sex",subtitle="distribution of feelings_life", caption="Source: GSS dataset") + theme(axis.text.x = element_text(angle = 30, vjust = 0.4))+theme(panel.background = element_rect(fill = "white", colour = "royalblue",size = 0.5, linetype = "solid"))
+plt3
+```
+In the boxplot of distribution of feeling, the quantities of satisfaction of male and female are similar. 
+
+```{r fig5}
+#place_birth_canada
+plt4 <- gss_data %>% ggplot(aes(y=feelings_life , x= place_birth_canada)) + geom_boxplot(col="royalblue",fill = "pink",outlier.colour = "blue", outlier.shape = 16)+ labs(title="Attitude towards Life for different birth place",subtitle="distribution of feelings_life", caption="Source: GSS dataset") + theme(axis.text.x = element_text(angle = 30, vjust = 0.4))+theme(panel.background = element_rect(fill = "white", colour = "royalblue",size = 0.5, linetype = "solid"))
+plt4
+```
+In the box plot of attitude towards Life for different birth places, people who are born inside or outside of Canada have similar feelings of life.
+
+```{r fig6}
+#pop_center
+plt5 <- gss_data %>% ggplot(aes(y=feelings_life , x= pop_center)) + geom_boxplot(col="royalblue",fill = "pink",outlier.colour = "blue", outlier.shape = 16)+ labs(title="Attitude towards Life for different population center",subtitle="distribution of feelings_life", caption="Source: GSS dataset") +theme(axis.text.x = element_text(angle = 30, vjust = 0.4))+theme(panel.background = element_rect(fill = "white", colour = "royalblue",size = 0.5, linetype = "solid"))
+plt5
+```
+In the box plot of attitude towards Life for different population centers, the median of people’s satisfaction in Prince Edward Island, rural area and urban area are almost the same. 
+
+```{r fig7}
+#marital_status
+plt6 <- gss_data %>% ggplot(aes(y=feelings_life , x= marital_status)) + geom_boxplot(col="royalblue",fill = "pink",outlier.colour = "blue", outlier.shape = 16)+ labs(title="Attitude towards Life for different marital status",subtitle="distribution of feelings_life", caption="Source: GSS dataset") +theme(axis.text.x = element_text(angle = 30, vjust = 0.4))+theme(panel.background = element_rect(fill = "white", colour = "royalblue",size = 0.5, linetype = "solid"))
+plt6
+```
+According to the attitude towards Life for different marital status boxplot, the living common-law has the most outliers while the single, widowed and divorced rate are almost the same. 
+
+```{r fig8}
+#vis_minority
+plt7 <- gss_data %>% ggplot(aes(y=feelings_life , x= vis_minority)) + geom_boxplot(col="royalblue",fill = "pink",outlier.colour = "blue", outlier.shape = 16)+ labs(title="Attitude towards Life for whether or not a visiable minority",subtitle="distribution of feelings_life", caption="Source: GSS dataset") +theme(axis.text.x = element_text(angle = 30, vjust = 0.4))+theme(panel.background = element_rect(fill = "white", colour = "royalblue",size = 0.5, linetype = "solid"))
+plt7
+```
+In the boxplot for attitude towards Life for whether or not a visible minority, it shows that most of the people do not know the minority. 
+
+```{r fig9}
+# education
+plt8 <- gss_data %>% ggplot(aes(y=feelings_life , x= education)) + geom_boxplot(col="royalblue",fill = "pink",outlier.colour = "blue", outlier.shape = 16)+ labs(title="Attitude towards Life for different education degree",subtitle="distribution of feelings_life", caption="Source: GSS dataset") +theme(axis.text.x = element_text(angle = 30, vjust = 0.4))+theme(panel.background = element_rect(fill = "white", colour = "royalblue",size = 0.5, linetype = "solid"))
+plt8
+```
+In the boxplot of attitude towards Life for different education degrees, the category shows that people with less than high school education level are more satisfied with their life. 
+
+```{r fig10}
+# own_rent
+plt9 <- gss_data %>% ggplot(aes(y=feelings_life , x= own_rent)) + geom_boxplot(col="royalblue",fill = "pink",outlier.colour = "blue", outlier.shape = 16)+ labs(title="Attitude towards Life for different living status",subtitle="distribution of feelings_life", caption="Source: GSS dataset") +theme(axis.text.x = element_text(angle = 30, vjust = 0.4))+theme(panel.background = element_rect(fill = "white", colour = "royalblue",size = 0.5, linetype = "solid"))
+plt9
+```
+In the box plot of attitude towards Life for different living status, the median of the category of  people who rented, owned a house and unclear are almost the same. The owned category has the most number of outliers. 
+
+```{r fig11}
+#Mapping
+#total_children
+plt10<- gss_data %>% ggplot() +
+  geom_count(mapping = aes(x = total_children, y = feelings_life,color=feelings_life) )+ labs(title="Distribution of feelings of life for each number of children",subtitle="density of feelings_life", caption="Source: GSS dataset") +theme_minimal() + scale_color_gradient(low = "#0091ff", high = "#f0650e")+theme(axis.text.x = element_text(angle = 0, vjust = 0.4))
+plt10
+
+
+```
+In the mapping of distribution of feelings of life for each number of children, most of people have fewer children. Whether they have fewer or more children, their life satisfaction is relatively high. 
+
+```{r fig12}
+#self_rated_health
+plt11<- gss_data %>% ggplot() +
+  geom_count(mapping = aes(x = self_rated_health, y = feelings_life,color=feelings_life) )+ labs(title="Distribution of feelings of life for each self rated health status",subtitle="density of feelings_life", caption="Source: GSS dataset") +theme_minimal() + scale_color_gradient(low = "#0091ff", high = "#f0650e")+theme(axis.text.x = element_text(angle = 0, vjust = 0.4))
+plt11
+```
+In the mapping of distribution of feelings of life for each health rate status, people with good health status show higher satisfaction towards life. 
+
+```{r fig13}
+#income_family
+plt12<- gss_data %>% ggplot() +
+  geom_count(mapping = aes(x = income_family, y = feelings_life,color=feelings_life) )+ labs(title="Distribution of feelings of life for each family income",subtitle="density of feelings_life", caption="Source: GSS dataset") +theme_minimal() + scale_color_gradient(low = "#0091ff", high = "#f0650e")+theme(axis.text.x = element_text(angle = 30, vjust = 0.4))
+plt12
+```
+In the mapping of distribution of feelings of life for each family income, people with $\$50000$ to $\$1250000 $ income are more satisfied with the feeling of life. However, the drawbacks of data is that most of the points lie between 7 to 10. It can be improved by changing the type of diagram to historic diagram. The median will show the result better. 
+
+```{r, message=FALSE}
+#Table1
+# provience
+
+table1 <- gss_data %>% group_by(province) %>% summarise(mean = mean(feelings_life, na.rm=T),                                              median = median(feelings_life, na.rm = T))
+kable(table1, caption="Summary of feelings of life in each province", digits=3, format="markdown")
+
+```
+The above table shows the mean and median of people's satisfaction of life in different province.
+
+
+Through the binary logistic regression model, the data was summarized in the table below. In the Pr category, the self-rated-health-fair has the highest value which is 0.877 while category age, sex and so on have the minimum value. Most of the Pr-value is lower than 0.1. The std.error value is lower than 0.5 and the maximum is 0.383. The maximum value of z is 11.141 which is from the age category while the minimum is -5.455 which is from the intercept. The coefficients for most of the categories are positive. The maximum value is 1.811 which is from the health excellent category. The minimum value for the coefficient is -0.531 which is from the health poor category.
+```{r}
+feelings_life_mean <- mean(gss_data$feelings_life)
+feelings_life_median <- median(gss_data$feelings_life)
+```
+
+```{r model}
+gss_data$feelings_life[gss_data$feelings_life < feelings_life_mean] <- 0
+gss_data$feelings_life[gss_data$feelings_life > feelings_life_mean] <- 1
+
+model=glm(feelings_life~age+total_children+sex+pop_center+marital_status+ self_rated_health+income_family, data=gss_data,family=binomial)
+kable(summary(model)$coefficients, caption="Summary of Model Results", digits=3)
+```
+
+
+
+
+# Discussion
+We used the binary logistic regression model to do this analysis. In our model, we divided our observations of feeling_life into 2 groups to determine the relationship between feelings_life and other factors. Most of the people give the feelings_life a high score, with a mean of 8.09 and a median of 8. Under ideal condition, we should divide people into 2 groups with the same population, but in order to form a  relationship of function which is that one independent variable should only have one corresponding dependent variable, we should not divide people giving a score of 8 into different groups, thus we divide people into 2 groups by the mean. We put people with a really high score (9 and 10) into group one, and the dummy variable for this group is 1, and put people without a really high score (8 and under) into group 2, the dummy variable for this group is 0.
+
+Then, the binary response variable of our model is feeling_life which has dummy variables 0 and 1. We also have a set of explanatory variables: age, number of total children, sex, the center of population, marital status, self-rated health, family income. In this model, the p-value helps us to test the null hypothesis so that we can indicate whether the factors have a correlation with our response variable in the whole population. The null hypothesis for our model is that there is no correlation with our response variable. If the p-value smaller than 0.05, it rejects the null hypothesis so there may be a correlation between that factor and our response variable. The smaller the p-value, the stronger evidence for rejecting the null hypothesis. However, if the p-value greater than 0.05, it supports the null hypothesis, which means that there may not be a correlation between the factor and our response variable.
+
+By observing the model results, we can see that age, the total number of children, sex, marital status, health condition and family income are the factors that significantly affect people's feelings of life. As Canadian citizens' age and the total number of children in their family increases, people feel more satisfied with their lives. In the p-value table, sex(male) is negatively correlated with the feelings of their life, which means low life satisfaction was found among males. People who live common-law or married tend to feel better about their lives and worse with the people who separated. Moreover, widowed people also tend to be more satisfied with their lives. From the table, we can also conclude that Canadians with good health conditions were more likely to report satisfied with their lives. High life satisfaction can be found among the families with an annual income of $\$125,000$ and more. The families with a yearly income of less than $\$100,000$ start to show a negative correlation with their life feelings, and the result is more significant for the families with an annual income that is less than $\$25,000$, which means the families with a lower annual income are more likely to be dissatisfied.
+
+# Weakness and areas for future
+
+## Weaknesses
+- According to the 2017 General Social Survey (GSS), 91.8% of the telephone numbers reached the household during the survey, but the survey's response rate is only 52.4%. A low response rate can produce sampling bias if the non-response outcomes are unequal among the participants. 
+
+- People who completed the survey were mainly distributed in the 30-45 and 50-70 age range, which means older people are more likely to complete the survey. From the result, we concluded that people feel more satisfied with their lives as their age increases. However, the result may not be accurate since our sample can not represent the whole population.
+
+- The distribution of feeling_life is flawed. In our data, most of people have a higher score for feeling_life, which could be harder for us to turn it into a binary observation.
+We used "8" as the boundary to divided feeling_life into two groups. However, in the real life, "6","7" also represent a positive attitude towards life. It would affect our conclusion in terms of people's attitudes towards life in Canada. 
+
+## Next step
+- For the further study, we can study the components of the feelings of life and do a further survey to collect the data on the detail of each specific parts of feelings of life to increase the accuracy of the relation between the independent variables and dependent variable and increase the liability of the regression model.
+
+- Also since around one-third of the respondents give 8 on the feeling of life, thus we can develop a further study focus on this part of data to study the common characteristics within the group and difference from the whole data set. We can create a new model to forecast for any observation whether or not he or she is in the “8” group. Also, we can do the same step for the group of peoples who give the extremely low mark, like lower than 5.
+
+- There might be some other facts which might infect the results but not in the model, for the further study we can conduct a series of further survey focus on these variables. We can give the respondents a question that what might infect your feelings for life and according to the answer to modify the questionnaire. Through a series of the survey, we can have a more accurate model for the relationship between variables and feelings of life.
+
+# Appendix
+Code and data supporting this analysis is available at: "https://github.com/zhoufanx/STA304-problem-set3".
+
+We use R [@citeR] and packages tidyverse [@citetidyverse], visdat [@citevisdat], dplyr [@citedplyr], kableExtra [@citekable] and GSS dataset[@citedata] for this analysis.
+
+# References
+Gagné, C., Roberts, G. and Keown, L.-A. (2014) “Weighted estimation and bootstrap variance estimation for analyzing survey data: How to implement in selected software”. The Research Data Centres Information and Technical Bulletin. (Winter) 6(1):5-70. Statistics Canada Catalogue no. 12-002-X.
+http://www.statcan.gc.ca/bsolc/olc-cel/olc-cel?catno=12-002- X20040027032&lang=eng
+
+Ortiz-Ospina, E., & Roser, M. (2013, May 14). Happiness and Life Satisfaction. Retrieved October 18, 2020, from https://ourworldindata.org/happiness-and-life-satisfaction
+
+6.2 - Binary Logistic Regression with a Single Categorical Predictor. (n.d.). PennState Eberly College of Science. Retrieved October 18, 2020, from https://online.stat.psu.edu/stat504/node/150/
+
+Yihui Xie (2014) knitr: A Comprehensive Tool for Reproducible Research in R. In
+  Victoria Stodden, Friedrich Leisch and Roger D. Peng, editors, Implementing
+  Reproducible Computational Research. Chapman and Hall/CRC. ISBN 978-1466561595
+
+  
